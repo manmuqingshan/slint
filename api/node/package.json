@@ -1,6 +1,6 @@
 {
   "name": "slint-ui",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "homepage": "https://github.com/slint-ui/slint",
@@ -28,7 +28,7 @@
     "capture-console": "1.0.2",
     "jimp": "1.6.0",
     "ts-node": "10.9.2",
-    "typedoc": "0.25.13",
+    "typedoc": "0.27",
     "typescript": "5.2.2"
   },
   "engines": {
@@ -41,14 +41,13 @@
     "build:debug": "napi build --platform --js rust-module.cjs --dts rust-module.d.ts -c binaries.json && pnpm compile",
     "build:testing": "napi build --platform --js rust-module.cjs --dts rust-module.d.ts -c binaries.json --features testing && pnpm compile",
     "install": "node build-on-demand.mjs",
-    "docs": "pnpm build && typedoc --hideGenerator --treatWarningsAsErrors --readme cover.md typescript/index.ts",
+    "docs": "pnpm build && typedoc --hideGenerator --readme cover.md typescript/index.ts && cargo about generate thirdparty.hbs -o docs/thirdparty.html",
     "check": "biome check",
     "format": "biome format",
     "format:fix": "biome format --write",
     "lint": "biome lint",
     "lint:fix": "biome lint --fix",
-    "test": "ava",
-    "type-check": "tsc --noEmit"
+    "test": "ava"
   },
   "ava": {
     "extensions": {

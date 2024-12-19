@@ -1,6 +1,6 @@
 {
     "name": "imagefilter",
-    "version": "1.9.0",
+    "version": "1.9.1",
     "main": "main.js",
     "type": "module",
     "dependencies": {
@@ -14,6 +14,6 @@
     "scripts": {
         "start": "tsc --build && node ./main.js",
         "prestart": "cd ../../../api/node/ && pnpm run build && pnpm compile",
-        "type-check": "tsc --noEmit"
+        "check": "tsc --noEmit"
     }
 }
