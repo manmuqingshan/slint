@@ -217,6 +217,7 @@ component WindowItem {
     in property <bool> no-frame;
     in property <length> resize-border-width;
     in property <bool> always-on-top;
+    in-out property <bool> full-screen;
     in property <string> default-font-family;
     in-out property <length> default-font-size; // <=> StyleMetrics.default-font-size  set in apply_default_properties_from_style
     in property <int> default-font-weight;
@@ -260,9 +261,10 @@ export component TextInput {
     out property <int> anchor-position-byte-offset;
     out property <bool> has-focus;
     callback accepted;
-    callback rejected;
     callback edited;
     callback cursor_position_changed(position: Point);
+    callback key_pressed(event: KeyEvent) -> EventResult;
+    callback key_released(event: KeyEvent) -> EventResult;
     in property <bool> enabled: true;
     in property <bool> single-line: true;
     in property <bool> read-only: false;
