@@ -21,14 +21,20 @@ mod formatter {
     }
 
     impl<T: Display> FormatArgs for [T] {
-        type Output<'a> = &'a T where T: 'a;
+        type Output<'a>
+            = &'a T
+        where
+            T: 'a;
         fn from_index(&self, index: usize) -> Option<&T> {
             self.get(index)
         }
     }
 
     impl<const N: usize, T: Display> FormatArgs for [T; N] {
-        type Output<'a> = &'a T where T: 'a;
+        type Output<'a>
+            = &'a T
+        where
+            T: 'a;
         fn from_index(&self, index: usize) -> Option<&T> {
             self.get(index)
         }
@@ -154,7 +160,8 @@ impl<T: Display> Display for DisplayOrInt<T> {
 }
 
 impl<'a, T: FormatArgs + ?Sized> FormatArgs for WithPlural<'a, T> {
-    type Output<'b> = DisplayOrInt<T::Output<'b>>
+    type Output<'b>
+        = DisplayOrInt<T::Output<'b>>
     where
         Self: 'b;
 
@@ -336,10 +343,13 @@ fn index_for_locale(languages: &[&'static str]) -> Option<usize> {
     })
 }
 
+#[i_slint_core_macros::slint_doc]
 /// Select the current translation language when using bundled translations.
 /// This function requires that the application's `.slint` file was compiled with bundled translations..
 /// It must be called after creating the first component.
 /// Returns `Ok` if the language was selected; [`SelectBundledTranslationError`] otherwise.
+///
+/// See also the [Translation documentation](slint:translations).
 pub fn select_bundled_translation(language: &str) -> Result<(), SelectBundledTranslationError> {
     crate::context::GLOBAL_CONTEXT.with(|ctx| {
         let Some(ctx) = ctx.get() else {

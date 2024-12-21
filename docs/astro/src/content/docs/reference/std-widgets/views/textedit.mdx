@@ -97,14 +97,12 @@ TextEdit {
 }
 ```
 
-### rejected(string)
-Invoked when the escape key is pressed.
+### key-pressed(KeyEvent) -> EventResult
+Invoked when a key is pressed, the argument is a <Link type="KeyEvent" /> struct. Use this callback to
+handle keys before `TextEdit` does. Return `accept` to indicate that you've handled the event, or return
+`reject` to let `TextEdit` handle it.
 
-```slint no-test {2-4}
-TextEdit {
-    rejected(text) => {
-        debug("Rejected: ", text);
-    }
-}
-```
-
+### key-released(KeyEvent) -> EventResult
+Invoked when a key is released, the argument is a <Link type="KeyEvent" /> struct. Use this callback to
+handle keys before `TextEdit` does. Return `accept` to indicate that you've handled the event, or return
+`reject` to let `TextEdit` handle it.

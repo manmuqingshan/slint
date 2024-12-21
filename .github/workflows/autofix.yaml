@@ -1,12 +1,21 @@
 # Copyright © SixtyFPS GmbH <info@slint.dev>
 # SPDX-License-Identifier: GPL-3.0-only OR LicenseRef-Slint-Royalty-free-2.0 OR LicenseRef-Slint-Software-3.0
 
-# Run various formatters, linters, and type-checkers (Rust, C++, TypeScript, etc.)
-name: Format, Lint, and type-check
+name: autofix.ci  # needed to securely identify the workflow
 
 on:
-    workflow_call:
-    workflow_dispatch:
+  pull_request:
+    branches: [master, "feature/*"]
+  push:
+    branches: [master, "feature/*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
     format_lint_typecheck:
@@ -42,15 +51,10 @@ jobs:
                   pnpm install --frozen-lockfile
                   pnpm format
                   pnpm lint
+            - name: Check license headers
+              run: cargo xtask check_license_headers --fix-it
             - name: Suggest format changes
-              uses: reviewdog/action-suggester@v1
-              with:
-                  tool_name: formatters
-                  level: error
-                  fail_on_error: true
-            - name: Build Node.js API before type-check
-              working-directory: api/node
-              run: pnpm build:debug
+              uses: autofix-ci/action@ff86a557419858bb967097bfc916833f5647fa8c
             - name: Build wasm-interpreter before type check
               working-directory: tools/slintpad
               run: pnpm build:wasm_interpreter
@@ -60,3 +64,7 @@ jobs:
             - name: Typecheck on npm projects
               run: |
                   pnpm type-check
+            - run: sudo apt-get install pipx
+            - run: pipx install reuse
+            - name: Check reuse compliance
+              run: cargo xtask check_reuse_compliance    

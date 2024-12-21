@@ -1447,6 +1447,10 @@ fn continue_lookup_within_element(
                 &lookup_result.resolved_name,
                 &second,
             );
+        } else if let Some(deprecated) =
+            crate::lookup::check_deprecated_stylemetrics(elem, ctx, &prop_name)
+        {
+            ctx.diag.push_property_deprecation_warning(&prop_name, &deprecated, &second);
         }
         let prop = Expression::PropertyReference(NamedReference::new(
             elem,
@@ -1618,7 +1622,7 @@ fn resolve_two_way_bindings(
                                 ) && !lhs_lookup.is_local_to_component
                                 {
                                     // invalid property assignment should have been reported earlier
-                                    assert!(diag.has_errors());
+                                    assert!(diag.has_errors() || elem.borrow().is_legacy_syntax);
                                     continue;
                                 }
 

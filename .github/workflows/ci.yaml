@@ -78,13 +78,13 @@ jobs:
               with:
                   toolchain: ${{ matrix.rust_version }}
                   key: x-v3
-            # - name: Pin dependencies to make it build with our MSRV
-            #   if: matrix.rust_version == '1.77'
-            #   shell: bash
-            #   run: |
-            #       if [ ! -f ./Cargo.lock ]; then
-            #         cargo update -p xxx --precise x.y.z
-            #       fi
+            - name: Pin dependencies to make it build with our MSRV
+              if: matrix.rust_version == '1.77'
+              shell: bash
+              run: |
+                 if [ ! -f ./Cargo.lock ]; then
+                   cargo update -p home --precise 0.5.9
+                 fi
             - name: Run tests (not qt)
               run:  cargo test --verbose --all-features --workspace ${{ matrix.extra_args }} --exclude slint-node --exclude pyslint --exclude test-driver-node --exclude slint-node --exclude test-driver-nodejs --exclude test-driver-cpp --exclude mcu-board-support --exclude printerdemo_mcu --exclude uefi-demo --exclude slint-cpp --exclude slint-python -- --skip=_qt::t
               env:
@@ -153,6 +153,9 @@ jobs:
               # Release is only applied to the harness that drives the node.js invocations, but needed
               # to avoid crashing on Windows with what looks like an out of stack exception.
               run: cargo test --verbose --release --all-features -p test-driver-nodejs
+            - name: Check image-filter example
+              working-directory: examples/imagefilter/node
+              run: pnpm check
 
     python_test:
         env:
@@ -393,6 +396,8 @@ jobs:
                   default: true
                   buildtargets: esp32
                   ldproxy: false
+                  # version pinned until new version of esp-hal with https://github.com/esp-rs/esp-hal/pull/2615/
+                  version: 1.82.0
             - uses: Swatinem/rust-cache@v2
             - name: Kaluga
               run: cargo +esp check -p printerdemo_mcu --target xtensa-esp32s2-none-elf --no-default-features --features=mcu-board-support/esp32-s2-kaluga-1  --config examples/mcu-board-support/esp32_s2_kaluga_1/cargo-config.toml --release
@@ -594,7 +599,3 @@ jobs:
                   components: miri
             - name: Run Miri
               run: cargo miri test -p vtable -p const-field-offset -p i-slint-common
-
-    format_lint_typecheck:
-      uses: ./.github/workflows/fmt_lint_typecheck.yaml
-      secrets: inherit

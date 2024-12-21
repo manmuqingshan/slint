@@ -180,6 +180,7 @@ pub fn ui_set_known_components(
     current_component_index: usize,
 ) {
     let mut builtins_map: HashMap<String, Vec<ComponentItem>> = Default::default();
+    let mut std_widgets_map: HashMap<String, Vec<ComponentItem>> = Default::default();
     let mut path_map: HashMap<PathBuf, (SharedString, Vec<ComponentItem>)> = Default::default();
     let mut library_map: HashMap<String, Vec<ComponentItem>> = Default::default();
     let mut longest_path_prefix = PathBuf::new();
@@ -219,39 +220,33 @@ pub fn ui_set_known_components(
                 }
                 path_map.entry(path).or_insert((url, Vec::new())).1.push(item);
             }
-        } else {
+        } else if ci.is_builtin {
             builtins_map.entry(ci.category.clone()).or_default().push(item);
+        } else {
+            std_widgets_map.entry(ci.category.clone()).or_default().push(item);
         }
     }
 
-    let mut builtin_components = builtins_map
-        .drain()
-        .map(|(k, mut v)| {
-            v.sort_by_key(|i| i.name.clone());
-            let model = Rc::new(VecModel::from(v));
-            ComponentListItem {
-                category: k.into(),
-                file_url: SharedString::new(),
-                components: model.into(),
-            }
-        })
-        .collect::<Vec<_>>();
-    builtin_components.sort_by_key(|k| k.category.clone());
+    fn sort_subset(mut input: HashMap<String, Vec<ComponentItem>>) -> Vec<ComponentListItem> {
+        let mut output = input
+            .drain()
+            .map(|(k, mut v)| {
+                v.sort_by_key(|i| i.name.clone());
+                let model = Rc::new(VecModel::from(v));
+                ComponentListItem {
+                    category: k.into(),
+                    file_url: SharedString::new(),
+                    components: model.into(),
+                }
+            })
+            .collect::<Vec<_>>();
+        output.sort_by_key(|k| k.category.clone());
+        output
+    }
 
-    let mut library_components = library_map
-        .drain()
-        .map(|(k, mut v)| {
-            v.sort_by_key(|i| i.name.clone());
-            let model = Rc::new(VecModel::from(v));
-            ComponentListItem {
-                category: k.into(),
-                file_url: SharedString::new(),
-                components: model.into(),
-            }
-        })
-        .collect::<Vec<_>>();
-    library_components.sort_by_key(|k| k.category.clone());
-
+    let builtin_components = sort_subset(builtins_map);
+    let std_widgets_components = sort_subset(std_widgets_map);
+    let library_components = sort_subset(library_map);
     let mut file_components = path_map
         .drain()
         .map(|(p, (file_url, mut v))| {
@@ -271,6 +266,7 @@ pub fn ui_set_known_components(
         builtin_components.len() + library_components.len() + file_components.len(),
     );
     all_components.extend_from_slice(&builtin_components);
+    all_components.extend_from_slice(&std_widgets_components);
     all_components.extend_from_slice(&library_components);
     all_components.extend_from_slice(&file_components);
 
@@ -574,11 +570,14 @@ fn simplify_value(prop_info: &super::properties::PropertyInformation) -> Propert
                 if let Some(text) = expression
                     .child_node(SyntaxKind::QualifiedName)
                     .map(|n| i_slint_compiler::object_tree::QualifiedTypeName::from_node(n.into()))
-                    .and_then(|n| {
-                        n.to_string()
+                    .map(|n| {
+                        let n_str = n.to_string();
+                        n_str
                             .strip_prefix(&format!("{}.", enumeration.name))
                             .map(|s| s.to_string())
+                            .unwrap_or(n_str)
                     })
+                    .map(|s| s.to_string())
                 {
                     value.value_int = enumeration
                         .values
@@ -1062,6 +1061,18 @@ mod tests {
 
         let result = property_conversion_test(
             r#"export component Test { in property <ImageFit> test1: ImageFit   .    /* abc */ preserve; }"#,
+            0,
+        );
+        assert_eq!(result.kind, PropertyValueKind::Enum);
+        assert_eq!(result.value_string, "ImageFit");
+        assert_eq!(result.value_int, 3);
+        assert_eq!(result.default_selection, 0);
+        assert_eq!(result.is_translatable, false);
+
+        assert_eq!(result.visual_items.row_count(), 4);
+
+        let result = property_conversion_test(
+            r#"export component Test { in property <ImageFit> test1: /* abc */ preserve; }"#,
             0,
         );
         assert_eq!(result.kind, PropertyValueKind::Enum);
