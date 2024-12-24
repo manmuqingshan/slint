@@ -283,35 +283,6 @@ impl<'a> core::fmt::Debug for GraphicsAPI<'a> {
     }
 }
 
-/// API Version
-#[derive(Debug, Clone, PartialEq)]
-pub struct APIVersion {
-    /// Major API version
-    pub major: u8,
-    /// Minor API version
-    pub minor: u8,
-}
-
-/// This enum specifies which OpenGL API should be used.
-#[derive(Debug, Clone, PartialEq)]
-pub enum OpenGLAPI {
-    /// OpenGL
-    GL(Option<APIVersion>),
-    /// OpenGL ES
-    GLES(Option<APIVersion>),
-}
-
-/// This enum specifies which renderer should be used.
-#[derive(Debug, Clone, PartialEq)]
-pub enum SlintRenderer {
-    /// The FemtoVG renderer
-    FemtoVG,
-    /// The Skia renderer
-    Skia,
-    /// The software renderer
-    Software,
-}
-
 /// This enum describes the different rendering states, that will be provided
 /// to the parameter of the callback for `set_rendering_notifier` on the `slint::Window`.
 #[derive(Debug, Clone)]
@@ -702,6 +673,7 @@ impl Window {
 
 pub use crate::SharedString;
 
+#[i_slint_core_macros::slint_doc]
 /// This trait is used to obtain references to global singletons exported in `.slint`
 /// markup. Alternatively, you can use [`ComponentHandle::global`] to obtain access.
 ///
@@ -734,7 +706,7 @@ pub use crate::SharedString;
 /// Palette::get(&app).set_foreground_color(slint::Color::from_rgb_u8(255, 255, 255));
 /// ```
 ///
-#[doc = concat!("See also the [language documentation for global singletons](https://slint.dev/releases/", env!("CARGO_PKG_VERSION"), "/docs/slint/src/reference/globals.html) for more information.")]
+/// See also the [language documentation for global singletons](slint:globals) for more information.
 ///
 /// **Note:** Only globals that are exported or re-exported from the main .slint file will
 /// be exposed in the API

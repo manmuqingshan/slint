@@ -11,7 +11,7 @@ The syntax looks like this: `for name[index] in model : id := Element { ... }`
 The _model_ can be of the following type:
 
 -   an integer, in which case the element will be repeated that amount of time
--   an [array type or a model](#models) declared natively, in which case the element will be instantiated for each element in the array or model.
+-   an [array type or a model](#arrays-and-models) declared natively, in which case the element will be instantiated for each element in the array or model.
 
 The _name_ will be available for lookup within the element and is going to be like a pseudo-property set to the
 value of the model. The _index_ is optional and will be set to the index of this element in the model.
@@ -49,4 +49,32 @@ export component Example inherits Window {
 }
 ```
 
-## Models
+## Arrays and Models
+
+Arrays are declared by wrapping `[` and `]` square brackets around the type of the array elements.
+
+Array literals as well as properties holding arrays act as models in `for` expressions.
+
+```slint
+export component Example {
+    in-out property<[int]> list-of-int: [1,2,3];
+    in-out property<[{a: int, b: string}]> list-of-structs: [{ a: 1, b: "hello" }, {a: 2, b: "world"}];
+}
+```
+
+Arrays define the following operations:
+
+-   **`array.length`**: One can query the length of an array and model using the builtin `.length` property.
+-   **`array[index]`**: The index operator retrieves individual elements of an array.
+
+Out of bound access into an array will return default-constructed values.
+
+```slint
+export component Example {
+    in-out property<[int]> list-of-int: [1,2,3];
+
+    out property <int> list-len: list-of-int.length;
+    out property <int> first-int: list-of-int[0];
+}
+```
+

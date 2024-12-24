@@ -331,7 +331,7 @@ impl<'a> WindowProperties<'a> {
 
     /// Returns true if the window should be shown fullscreen; false otherwise.
     pub fn is_fullscreen(&self) -> bool {
-        self.0.fullscreen.get()
+        self.0.is_fullscreen()
     }
 
     /// true if the window is in a maximized state, otherwise false
@@ -431,7 +431,6 @@ pub struct WindowInner {
     cursor_blinker: RefCell<pin_weak::rc::PinWeak<crate::input::TextCursorBlinker>>,
 
     pinned_fields: Pin<Box<WindowPinnedFields>>,
-    fullscreen: Cell<bool>,
     maximized: Cell<bool>,
     minimized: Cell<bool>,
 
@@ -489,10 +488,6 @@ impl WindowInner {
                     "i_slint_core::Window::text_input_focused",
                 ),
             }),
-            #[cfg(feature = "std")]
-            fullscreen: Cell::new(std::env::var("SLINT_FULLSCREEN").is_ok()),
-            #[cfg(not(feature = "std"))]
-            fullscreen: Cell::new(false),
             maximized: Cell::new(false),
             minimized: Cell::new(false),
             focus_item: Default::default(),
@@ -690,15 +685,16 @@ impl WindowInner {
         event.modifiers = self.modifiers.get().into();
 
         let mut item = self.focus_item.borrow().clone().upgrade();
+
+        if item.as_ref().is_some_and(|i| !i.is_visible()) {
+            // Reset the focus... not great, but better than keeping it.
+            self.take_focus_item();
+            item = None;
+        }
+
         while let Some(focus_item) = item {
-            if !focus_item.is_visible() {
-                // Reset the focus... not great, but better than keeping it.
-                self.take_focus_item();
-            } else if focus_item.borrow().as_ref().key_event(
-                &event,
-                &self.window_adapter(),
-                &focus_item,
-            ) == crate::input::KeyEventResult::EventAccepted
+            if focus_item.borrow().as_ref().key_event(&event, &self.window_adapter(), &focus_item)
+                == crate::input::KeyEventResult::EventAccepted
             {
                 crate::properties::ChangeTracker::run_change_handlers();
                 return;
@@ -1247,13 +1243,19 @@ impl WindowInner {
 
     /// Returns if the window is currently maximized
     pub fn is_fullscreen(&self) -> bool {
-        self.fullscreen.get()
+        if let Some(window_item) = self.window_item() {
+            window_item.as_pin_ref().full_screen()
+        } else {
+            false
+        }
     }
 
     /// Set or unset the window to display fullscreen.
     pub fn set_fullscreen(&self, enabled: bool) {
-        self.fullscreen.set(enabled);
-        self.update_window_properties()
+        if let Some(window_item) = self.window_item() {
+            window_item.as_pin_ref().full_screen.set(enabled);
+            self.update_window_properties()
+        }
     }
 
     /// Returns if the window is currently maximized
@@ -1291,6 +1293,11 @@ impl WindowInner {
     /// Private access to the WindowInner for a given window.
     pub fn from_pub(window: &crate::api::Window) -> &Self {
         &window.0
+    }
+
+    /// Provides access to the Windows' Slint context.
+    pub fn context(&self) -> &crate::SlintContext {
+        &*self.ctx
     }
 }
 
